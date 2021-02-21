@@ -1,0 +1,109 @@
+<!--定義按鈕-->
+<div id="basic_uploader_fine"><i class="icon-upload icon-white"></i>選擇檔案</div>
+<div id="triggerUpload">點選上傳</div>
+<!--顯示資訊-->
+<div id="messages"></div>
+<div id="cancelUpload" class="buttons">取消</div>
+<div id="cancelAll" class="buttons">取消全部</div>
+<div id="pauseUpload" class="buttons">暫停上傳</div>
+<div id="continueUpload" class="buttons">繼續上傳</div>
+<script>$(document).ready(function() {
+$fub = $('#basic_uploader_fine');
+$messages = $('#messages');
+var uploader = new qq.FineUploaderBasic({
+debug: true,  // 開啟除錯模式
+multiple: true, // 多檔案上傳
+button: $fub[0], //上傳按鈕
+autoUpload: false, //不自動上傳則呼叫uploadStoredFiless方法 手動上傳
+// 驗證上傳檔案
+validation: {
+allowedExtensions: ['jpeg', 'jpg', 'png', 'zip' , 'rar'],
+},
+// 遠端請求地址（相對或者絕對地址）
+request: {
+endpoint: 'server/endpoint.php'
+},
+retry: {
+enableAuto: false // defaults to false 自動重試
+},
+chunking: {
+enabled: true,
+partSize: 500, // 分組大小，預設為 2M
+concurrent: {
+enabled: true // 開啟併發分組上傳，預設併發3個
+},
+success: {
+endpoint: "server/endpoint.php?done" // 分組上傳完成後處理
+}
+},
+//回撥函式
+callbacks: {
+//檔案開始上傳
+onSubmit: function(id, fileName) {
+$messages.append('<div id="file-'   id   '" class="alert" style="margin: 20px 0 0">' fileName '</div>');
+},
+onUpload: function(id, fileName) {
+$('#file-'   id).addClass('alert-info')
+.html('<img src="client/loading.gif" alt="Initializing. Please hold."> '
+'Initializing '
+'“'   fileName   '”');
+},
+//進度條
+onProgress: function(id, fileName, loaded, total) {
+if (loaded < total) {
+progress = Math.round(loaded / total * 100)   '% of '   Math.round(total / 1024)   ' kB';
+$('#file-'   id).removeClass('alert-info')
+.html('<img src="http://img.zcool.cn/community/01ff2756629d096ac725b2c8e95102.gif" width="50px" height="50px;" alt="In progress. Please hold."> '
+'上傳檔案中......'   progress);
+} else {
+$('#file-'   id).addClass('alert-info')
+.html('<img src="http://img.zcool.cn/community/01ff2756629d096ac725b2c8e95102.gif" width="50px" height="50px;" alt="Saving. Please hold."> '
+'上傳檔案中...... ');
+}
+},
+//上傳完成後
+onComplete: function(id, fileName, responseJSON) {
+if (responseJSON.success) {
+var img = responseJSON['target']
+$('#file-'   id).removeClass('alert-info')
+.addClass('alert-success')
+.html('<i class="icon-ok"></i> '
+'上傳成功！ '
+'“'   fileName   '”'
+);
+} else {
+$('#file-'   id).removeClass('alert-info')
+.addClass('alert-error')
+.html('<i class="icon-exclamation-sign"></i> '
+'Error with '
+'“'   fileName   '”: '
+responseJSON.error);
+}
+},
+onError: function(id, name, reason, maybeXhrOrXdr) {
+console.log(id   '_'   name   '_'   reason);
+},
+}
+});
+//手動觸發上傳上傳
+$('#triggerUpload').click(function() {
+uploader.uploadStoredFiles();
+});
+//取消某一個上傳
+$('#cancelUpload').click(function() {
+uploader.cancel(0);
+});
+//取消所有未上傳的檔案
+$('#cancelAll').click(function() {
+//單個檔案上傳沒有作用 因為已經在上傳的不能使用這個cancelAll取消上傳
+uploader.cancelAll();
+});
+//暫停上傳某個檔案
+$('#pauseUpload').click(function() {
+uploader.pauseUpload(0);
+});
+// 繼續上傳
+$('#continueUpload').click(function() {
+uploader.continueUpload(0);
+});
+});</script>

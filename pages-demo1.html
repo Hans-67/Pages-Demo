@@ -1,0 +1,35 @@
+<input type="file" accept=".pdf,.png" onChange="fileUpload">
+
+<script>function fileUpload(sender) {
+        var fileList = sender.currentTarget.files;
+        var file = fileList[0];
+        chunky(file, 0);
+    }
+
+    function chunky(file, chunkIndex) {
+        let chunkSize = 1024 * 4;
+        let totalSize = file.size;
+
+        let totalChunkSize = Math.floor((totalSize + chunkSize - 1) / chunkSize);
+        if (chunkIndex >= totalChunkSize) {
+            return;
+        }
+
+        let start = chunkIndex * chunkSize;
+        let blob = file.slice(start, start + chunkSize);
+
+        var dataForm = new DataForm();
+        dataForm.append("fileUpload", blob, file.name);
+        dataForm.append("chunkIndex", chunkIndex);
+        dataForm.append("totalSize", totalSize);
+
+        $.ajax({
+            url: "/Home/UploadFileChunk",
+            type: "POST",
+            processData: false,
+            contentType: false
+      data: dataForm
+        }).done(function (r) {
+            chunky(file, chunkIndex + 1);
+        });
+    }</script>
